@@ -1,2 +1,1 @@
-# dashing-sensu
-new sensu dashing dashboard 
+Check out http://shopify.github.com/dashing for more information.
