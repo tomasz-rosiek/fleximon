@@ -1,4 +1,4 @@
-class Dashing.Sensu extends Dashing.Widget
+class Dashing.SensuOverview extends Dashing.Widget
 
   ready: ->
     # This is fired when the widget is done being rendered
