@@ -3,29 +3,30 @@
 require 'net/http'
 require 'json'
 
-SENSU_API_ENDPOINT = 'http://localhost:4567'.freeze
-
 # Set user and password if you want to enable authentication.
 # Otherwise, leave them blank.
 SENSU_API_USER = ''.freeze
 SENSU_API_PASSWORD = ''.freeze
+SENSU_API_ENDPOINT = 'http://localhost:4567'.freeze
 
+# connection details to environments
 env_file = File.read('environments.json')
-data_hash = JSON.parse(env_file)
+environments = JSON.parse(env_file)
 
+# columns config for teamviews
 columns_file = File.read('columns.json')
 columns = JSON.parse(columns_file)
 
 SCHEDULER.every '50s', first_in: 0 do |_job|
   critical_count = 0
   warning_count = 0
+  unknown_count = 0
   client_warning = []
   client_critical = []
-  my_array = []
+  table_data = []
   hrows = [{ cols: [] }]
 
-  # auth = (SENSU_API_USER.empty? || SENSU_API_PASSWORD.empty?) ? false : true
-
+  # fetch data from sensu API
   def get_data(api, endpoint, user, pass)
     uri = URI(api + endpoint)
     req = Net::HTTP::Get.new(uri)
@@ -37,6 +38,7 @@ SCHEDULER.every '50s', first_in: 0 do |_job|
     JSON.parse(response.body)
   end
 
+  # associate column name with hash entry
   def get_assoc(column_name, entry)
     assoc = {}
     assoc['hostname'] = entry['client']['name']
@@ -48,18 +50,21 @@ SCHEDULER.every '50s', first_in: 0 do |_job|
     assoc[column_name]
   end
 
-  data_hash['config'].each do |_key, value|
+  # iterrate through each envionments in the config
+  # and pull data for each
+  environments['config'].each do |_key, value|
     endpoint = '/events'
     port = value['port']
-    api = 'http://' + value['host'] + ':' + port
     user = value['user']
     pass = value['password']
+    api = 'http://' + value['host'] + ':' + port
     get_data(api, endpoint, user, pass)
   end
 
   warn = []
   crit = []
 
+  # get hash
   events = get_data(SENSU_API_ENDPOINT, '/events',
                     SENSU_API_USER, SENSU_API_PASSWORD)
   # status = get_data(SENSU_API_ENDPOINT, '/status',
@@ -69,19 +74,23 @@ SCHEDULER.every '50s', first_in: 0 do |_job|
     hrows[0][:cols].insert(-1, class: 'left', value: column)
   end
 
+  # for each event...
   events.each_with_index do |event, _event_index|
     event_var = { cols: [] }
+
+    # for each column....
     columns['config']['default'].each_with_index do |column, _column_index|
-      x = get_assoc(column, event)
-      x = if x
-            x.chomp
-          else
-            ''
-          end
-      column_var = { class: 'left', value: x }
+      data = get_assoc(column, event)
+      data = data.nil? ? '' : data.chomp # remove tailing whitespace
+
+      # add column to event var
+      column_var = { class: 'left', value: data }
       event_var[:cols].insert(-1, column_var)
     end
-    my_array.insert(-1, event_var)
+    # add complete row
+    table_data.insert(-1, event_var)
+
+    # increment alarm count for different status type
     status = event['check']['status']
     if status == 1
       warn.push(event)
@@ -89,36 +98,43 @@ SCHEDULER.every '50s', first_in: 0 do |_job|
     elsif status == 2
       crit.push(event)
       critical_count += 1
+    elsif status > 2 # status 3 and above == unknown
+      unknown_count += 1
     end
   end
 
+  # update warning count
   unless warn.empty?
     warn.each do |entry|
       client_warning.push(label: entry['client']['name'],
-                          value: entry['check']['name'],
-                          poo: entry['check']['output'])
+                          value: entry['check']['name'])
     end
   end
+
+  # update critical count
   unless crit.empty?
     crit.each.with_index do |entry, _index|
       client_critical.push(label: entry['client']['name'],
-                           value: entry['check']['name'],
-                           poo: entry['check']['output'])
+                           value: entry['check']['name'])
     end
   end
 
-  status = 'green'
-  if critical_count > 0
-    status = 'red'
-  elsif warning_count > 0
-    status = 'yellow'
-  end
+  status = if critical_count > 0
+             'red'
+           elsif warning_count > 0
+             'yellow'
+           else
+             'green'
+           end
 
-  rows = my_array
+  # Send all collected data to dashboard
+  send_event('sensu-status',
+             criticals: critical_count,
+             warnings: warning_count,
+             unknowns: unknown_count,
+             status: status)
 
-  send_event('sensu-status', criticals: critical_count,
-                             warnings: warning_count, status: status)
   send_event('sensu-warn-list', items: client_warning)
   send_event('sensu-crit-list', items: client_critical)
-  send_event('my-table', hrows: hrows, rows: rows)
+  send_event('sensu-table', hrows: hrows, rows: table_data)
 end
