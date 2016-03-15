@@ -3,12 +3,6 @@
 require 'net/http'
 require 'json'
 
-# Set user and password if you want to enable authentication.
-# Otherwise, leave them blank.
-SENSU_API_USER = ''.freeze
-SENSU_API_PASSWORD = ''.freeze
-SENSU_API_ENDPOINT = 'http://localhost:4567'.freeze
-
 # connection details to environments
 env_file = File.read('environments.json')
 environments = JSON.parse(env_file)
@@ -31,7 +25,7 @@ SCHEDULER.every '50s', first_in: 0 do |_job|
     uri = URI(api + endpoint)
     req = Net::HTTP::Get.new(uri)
     auth = (user.empty? || pass.empty?) ? false : true
-    req.basic user, pass if auth
+    req.basic_auth user, pass if auth
     response = Net::HTTP.start(uri.hostname, uri.port) do |http|
       http.request(req)
     end
@@ -50,6 +44,7 @@ SCHEDULER.every '50s', first_in: 0 do |_job|
     assoc[column_name]
   end
 
+  events = []
   # iterrate through each envionments in the config
   # and pull data for each
   environments['config'].each do |_key, value|
@@ -58,17 +53,13 @@ SCHEDULER.every '50s', first_in: 0 do |_job|
     user = value['user']
     pass = value['password']
     api = 'http://' + value['host'] + ':' + port
-    get_data(api, endpoint, user, pass)
+    current_env = get_data(api, endpoint, user, pass)
+    events.push(*current_env)
   end
 
   warn = []
   crit = []
-
-  # get hash
-  events = get_data(SENSU_API_ENDPOINT, '/events',
-                    SENSU_API_USER, SENSU_API_PASSWORD)
   # status = get_data(SENSU_API_ENDPOINT, '/status',
-  # SENSU_API_USER, SENSU_API_PASSWORD)
 
   columns['config']['default'].each do |column|
     hrows[0][:cols].insert(-1, class: 'left', value: column)
