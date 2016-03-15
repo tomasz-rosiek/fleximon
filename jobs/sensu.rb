@@ -52,7 +52,8 @@ SCHEDULER.every '50s', first_in: 0 do |_job|
     port = value['port']
     user = value['user']
     pass = value['password']
-    api = 'http://' + value['host'] + ':' + port
+    path = value['path'].nil? ? '' : value['path']
+    api = 'http://' + value['host'] + ':' + port + path
     current_env = get_data(api, endpoint, user, pass)
     events.push(*current_env)
   end
