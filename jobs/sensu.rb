@@ -11,6 +11,19 @@ environments = JSON.parse(env_file)
 columns_file = File.read('columns.json')
 columns = JSON.parse(columns_file)
 
+def get_status(status)
+  case status
+  when 0
+    return 'ok'
+  when 1
+    return 'warning'
+  when 2
+    return 'critical'
+  else
+    return 'unknown'
+  end
+end
+
 SCHEDULER.every '50s', first_in: 0 do |_job|
   critical_count = 0
   warning_count = 0
@@ -43,7 +56,7 @@ SCHEDULER.every '50s', first_in: 0 do |_job|
 
     assoc[column_name]
   end
-
+  
   events = []
   # iterrate through each envionments in the config
   # and pull data for each
@@ -63,11 +76,13 @@ SCHEDULER.every '50s', first_in: 0 do |_job|
   # status = get_data(SENSU_API_ENDPOINT, '/status',
 
   columns['config']['default'].each do |column|
-    hrows[0][:cols].insert(-1, class: 'left', value: column)
+    hrows[0][:cols].insert(-1, value: column)
   end
 
   # for each event...
   events.each_with_index do |event, _event_index|
+    status = event['check']['status']
+    status_string = get_status(status)
     event_var = { cols: [] }
 
     # for each column....
@@ -76,14 +91,16 @@ SCHEDULER.every '50s', first_in: 0 do |_job|
       data = data.nil? ? '' : data.chomp # remove tailing whitespace
 
       # add column to event var
-      column_var = { class: 'left', value: data }
+      column_var = { class: status_string, value: data }
       event_var[:cols].insert(-1, column_var)
+
     end
     # add complete row
+   # print event_var
+    # sleep(100)
     table_data.insert(-1, event_var)
 
     # increment alarm count for different status type
-    status = event['check']['status']
     if status == 1
       warn.push(event)
       warning_count += 1
