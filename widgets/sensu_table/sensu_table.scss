@@ -1,81 +1,131 @@
 // ----------------------------------------------------------------------------
 // Sass declarations
 // ----------------------------------------------------------------------------
-$background-color:  #12b0c5;
-$value-color:       #fff;
 
-$title-color:       rgba(255, 255, 255, 0.7);
-$label-color:       rgba(255, 255, 255, 0.7);
-$moreinfo-color:    rgba(255, 255, 255, 0.7);
-
-$th-background-color:       #222;
-$tr-odd-background-color:   #12a0c5;
-$tr-even-background-color:  #47bbb3;
+$background-color: #222222;
+$value-color: #fff;
+$title-color: rgba(255,255,255,0.7);
+$label-color: rgba(255,255,255,0.7);
+$moreinfo-color: rgba(255,255,255,0.7);
+$th-background-color: #222;
+$tr-odd-background-color: #12a0c5;
+$tr-even-background-color: #47bbb3;
 $tr-hover-background-color: #858585;
-
 // ----------------------------------------------------------------------------
 // Widget-table styles
 // ----------------------------------------------------------------------------
-.widget-sensu-table {
 
-  background-color: $background-color;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding-top: 25px;
+.widget-sensu-table
+{
+  background-color:$background-color;
+  position:absolute;
+  top:0;
+  bottom:0;
+  left:0;
+  right:0;
+  padding-top:25px;
+  word-wrap:break-word;
+  titlecolor:$title-color;
+}
 
-  .title {
-    color: $title-color;
-  }
+.value
+{
+  margin-left:12px;
+  font-weight:600;
+  color:$value-color;
+}
 
-  .value {
-    margin-left: 12px;
-    font-weight: 600;
-    color: $value-color;
-  }
+.updated-at
+{
+  color:rgba(0,0,0,0.3);
+}
 
-  .updated-at {
-    color: rgba(0, 0, 0, 0.3);
-  }
+.more-info
+{
+  color:$moreinfo-color;
+}
 
-  .more-info {
-    color: $moreinfo-color;
-  }
+// Specify a table border for the table,header and cell elements
+table
+{
+  border-collapse:collapse;
+  width:10%;
+}
 
-  // Specify a table border for the table, header and cell elements
-  // table { border-collapse: collapse; }
-  // table, th, td { border: 1px solid black; }
+table,th,td
+{
+  border:1px solid #000;
+}
 
-  // Just a border around the table, nothing else
-  table.sortable { border: 1px solid black; 
-          top: 0;
-          padding-top: 2005px;
-          
-        }
+tr
+{
+  border:4px solid #000;
+}
 
-  // Set the background color for the header row
-  th { background-color: $th-background-color; }
+// Just a border around the table,nothing else
+table.sortable
+{
+  border:1px solid #000;
+  table-layout:fixed;
+  width:100%;
+}
 
-  // If you want a stripped table set the color for both odd and even rows
-  tr:nth-child(odd) { background-color: $tr-odd-background-color; }
-  tr:nth-child(even) { background-color: $tr-even-background-color; }
+// Set the background color for the header row
+th
+{
+  background-color:$th-background-color;
+}
 
-  // Highlight table rows on mouse over
-  tr:hover { background-color: $tr-hover-background-color; }
+// If you want a stripped table set the color for both odd and even rows
+tr:nth-child(odd)
+{
+  background-color:$tr-odd-background-color;
+  height:50px;
+}
 
-  td {
-    margin: 0 15px;
-    text-align: center;
-    color: $label-color;
-  }
+tr:nth-child(even)
+{
+  background-color:$tr-even-background-color;
+  height:50px;
+}
 
-  .left {
-    text-align: left;
-  }
-  .right {
-    text-align: right;
-  }
+td
+{
+  vertical-align:top;
+  text-align:left;
+  color:$label-color;
+  margin:0 15px;
+}
 
+.critical
+{
+  background-color:#B0171F;
+}
+
+.warning
+{
+  background-color:#FF0;
+  yellowcolor:#000;
+}
+
+.unknown
+{
+  background-color:orange;
+  orangecolor:#000;
+}
+
+// Highlight table rows on mouse over
+tr:hover
+{
+  background-color:$tr-hover-background-color;
+}
+
+tr:hover td
+{
+  background:transparent;
+}
+
+select
+{
+  margin-bottom:3.5em;
 }
