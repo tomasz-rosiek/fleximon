@@ -2,14 +2,28 @@
 
 require 'net/http'
 require 'json'
+require './logging'
 
-# connection details to environments
-env_file = File.read('environments.json')
-environments = JSON.parse(env_file)
+app_name = 'fleximon'
+$logger = MyLoggerMiddleware.new(STDOUT, app_name)
+use MyLoggerMiddleware, $logger
 
-# columns config for teamviews
-columns_file = File.read('columns.json')
-columns = JSON.parse(columns_file)
+$logger.debug("starting app: %s" % app_name)
+
+begin
+  # connection details to environments
+  env_file = File.read('environments.json')
+  environments = JSON.parse(env_file)
+
+  # columns config for teamviews
+  columns_file = File.read('columns.json')
+  columns = JSON.parse(columns_file)
+
+rescue Exception => config
+  $logger.error('config problems, exiting...', config.class, config.message,
+                config.backtrace)
+  exit false
+end
 
 def get_status(status)
   case status
@@ -35,14 +49,29 @@ SCHEDULER.every '50s', first_in: 0 do |_job|
 
   # fetch data from sensu API
   def get_data(api, endpoint, user, pass)
+    $logger.debug('getting data for %s from %s' % [endpoint, api])
     uri = URI(api + endpoint)
     req = Net::HTTP::Get.new(uri)
     auth = (user.empty? || pass.empty?) ? false : true
     req.basic_auth user, pass if auth
-    response = Net::HTTP.start(uri.hostname, uri.port) do |http|
-      http.request(req)
+    begin
+      response = Net::HTTP.start(uri.hostname, uri.port) do |http|
+        http.request(req)
+      end
+
+    rescue Exception => conn
+      $logger.error('Error connecting to %s' % api, conn.class, conn.message,
+                    conn.backtrace)
+      return
     end
-    JSON.parse(response.body)
+
+    begin
+      JSON.parse(response.body)
+    rescue Exception => json_err
+      $logger.error('JSON problems', json_err.class, json_err.message,
+                    json_err.backtrace)
+      return
+    end
   end
 
   # associate column name with hash entry
@@ -56,7 +85,7 @@ SCHEDULER.every '50s', first_in: 0 do |_job|
 
     assoc[column_name]
   end
-  
+
   events = []
   # iterrate through each envionments in the config
   # and pull data for each
@@ -93,11 +122,8 @@ SCHEDULER.every '50s', first_in: 0 do |_job|
       # add column to event var
       column_var = { class: status_string, value: data }
       event_var[:cols].insert(-1, column_var)
-
     end
     # add complete row
-   # print event_var
-    # sleep(100)
     table_data.insert(-1, event_var)
 
     # increment alarm count for different status type
