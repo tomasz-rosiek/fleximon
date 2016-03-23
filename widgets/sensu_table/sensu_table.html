@@ -1,7 +1,8 @@
 <h1 class="title" data-bind="title"> 
 </h1> Select team:
-<select onchange="this.form.submit()">
-    <option value="All">All teams</option>
+<select onchange="UpdateQueryString(value)">
+    <option selected disabled>Choose here</option>
+    <option value="all">All teams</option>
     <option value="webops">Webops</option>
     <option value="platops">Platops</option>
     <option value="auth">Auth</option>

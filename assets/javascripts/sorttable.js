@@ -18,17 +18,13 @@
 
 
 var stIsIE = /*@cc_on!@*/false;
-console.log('code running')
 sorttable = {
   init: function() {
     // quit if this function has already been called
-    console.log('calling init....getting here') //AMRO
     if (arguments.callee.done) {
-      console.log('not proceeding')
       return;
     }
     // flag this function so we don't do the same thing twice
-    console.log('getting this far') 
     arguments.callee.done = true;
     // kill the timer
     if (_timer) clearInterval(_timer);
@@ -45,7 +41,6 @@ sorttable = {
 
   },
   reinit:function() {
-  console.log('reinit')
   forEach(document.getElementsByTagName('table'), function(table) {
       if (table.className.search(/\bsortable\b/) != -1) {
         sorttable.makeSortable(table);
@@ -53,7 +48,6 @@ sorttable = {
     });
   },
   makeSortable: function(table) {
-    console.log('makesortable')
     if (table.getElementsByTagName('thead').length == 0) {
       // table doesn't have a tHead. Since it should have, create one and
       // put the first table row in it.
@@ -87,11 +81,6 @@ sorttable = {
       }
       delete sortbottomrows;
     }
-    console.log('poo')
-    //console.log(window)
-    console.log(document.getElementById('div.Header.widget.widget-table.my-table'))
-    document.myValue = 'hello'   //AMRO
-    window.myValue = "test";
     // work through each column and calculate its type
     headrow = table.tHead.rows[0].cells;
     for (var i=0; i<headrow.length; i++) {
@@ -138,9 +127,7 @@ sorttable = {
 
           // remove sorttable_sorted classes
           theadrow = this.parentNode;
-          // AMRO console.log(theadrow)
           forEach(theadrow.childNodes, function(cell) {
-             //AMRO console.log(cell.className)
              if (cell.nodeType == 1) { // an element
                cell.className = cell.className.replace('sorttable_sorted_reverse','');
               cell.className = cell.className.replace('sorttable_sorted','');
@@ -167,7 +154,6 @@ sorttable = {
 	        for (var j=0; j<rows.length; j++) {
 	          row_array[row_array.length] = [sorttable.getInnerText(rows[j].cells[col]), rows[j]];
 	        }
-          console.log('amro' + row_array[2])  //AMRO
 	        /* If you want a stable sort, uncomment the following line */
 	        //sorttable.shaker_sort(row_array, this.sorttable_sortfunction);
 	        /* and comment out this one */
@@ -221,7 +207,6 @@ sorttable = {
     // this is *not* a generic getInnerText function; it's special to sorttable.
     // for example, you can override the cell text with a customkey attribute.
     // it also gets .value for <input> fields.
-    console.log('gettext') //AMRO
     if (!node) return "";
 
     hasInputs = (typeof node.getElementsByTagName == 'function') &&
@@ -394,7 +379,6 @@ window.onload = sorttable.init;
 
 
 function dean_addEvent(element, type, handler) {
-  console.log('add event') 
 	if (element.addEventListener) {
 		element.addEventListener(type, handler, false);
 	} else {
@@ -432,7 +416,6 @@ function removeEvent(element, type, handler) {
 };
 
 function handleEvent(event) {
-  console.log('event')   //AMRO
 	var returnValue = true;
 	// grab the event object (IE uses a global event object)
 	event = event || fixEvent(((this.ownerDocument || this.document || this).parentWindow || window).event);
@@ -479,7 +462,6 @@ if (!Array.forEach) { // mozilla already supports this
 
 // generic enumeration
 Function.prototype.forEach = function(object, block, context) {
-  console.log('here')
 	for (var key in object) {
 		if (typeof this.prototype[key] == "undefined") {
 			block.call(context, object[key], key, object);
@@ -494,7 +476,6 @@ String.forEach = function(string, block, context) {
 	});
 };
 
-console.log('where are we?')
 // globally resolve forEach enumeration
 var forEach = function(object, block, context) {
 	if (object) {
