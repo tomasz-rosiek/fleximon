@@ -4,3 +4,4 @@ history.yml
 environments.json
 columns.json
 .vagrant
+*.bak
