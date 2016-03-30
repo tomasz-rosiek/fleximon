@@ -38,7 +38,7 @@ def get_status(status)
   end
 end
 
-SCHEDULER.every '50s', first_in: 0 do |_job|
+SCHEDULER.every '60s', first_in: 0 do |_job|
   critical_count = 0
   warning_count = 0
   unknown_count = 0
@@ -164,12 +164,16 @@ SCHEDULER.every '50s', first_in: 0 do |_job|
 
   # Send all collected data to dashboard
   send_event('sensu-status',
-             criticals: critical_count,
-             warnings: warning_count,
-             unknowns: unknown_count,
+             criticals_tmp: critical_count,
+             warnings_tmp: warning_count,
+             unknowns_tmp: unknown_count,
              status: status)
 
   send_event('sensu-warn-list', items: client_warning)
   send_event('sensu-crit-list', items: client_critical)
-  send_event('sensu-table', hrows: hrows, rows: table_data)
+
+  # dump data into temporary array to be sorted at runtime
+  # depending on team query string provided in URL
+  send_event('sensu-table', hrows_tmp: hrows, rows_tmp: table_data)
+
 end
