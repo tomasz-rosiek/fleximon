@@ -3,3 +3,4 @@ history.yml
 *.swp
 environments.json
 columns.json
+.vagrant

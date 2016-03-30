@@ -1,0 +1,12 @@
+{
+  "checks": {
+    "random_string": {
+      "command": "ls /tmp/exist;exit random_exit_code",
+      "subscribers": [
+        "test"
+      ],
+      "team": "random_team",
+      "interval": 10
+    }
+  }
+}
