@@ -1,11 +1,9 @@
 {
 "config": {
-  "webops":
+  "default": 
     ["hostname", "check", "output", "team", "category"],
-  "security":
-    ["category", "check", "output"],
-  "default":
+  "webops":
     ["check", "output"]
-
+     
   }
 }
