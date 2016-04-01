@@ -1,9 +1,9 @@
 {
 "config": {
-  "default": 
+  "default":
     ["hostname", "check", "output", "team", "category"],
   "webops":
     ["check", "output"]
-     
+
   }
 }

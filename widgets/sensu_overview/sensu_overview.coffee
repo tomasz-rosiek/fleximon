@@ -4,4 +4,3 @@ class Dashing.SensuOverview extends Dashing.Widget
     # This is fired when the widget is done being rendered
 
   onData: (data) ->
-    console.log 'reading data'
