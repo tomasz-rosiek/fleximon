@@ -28,20 +28,18 @@ After looking at several other dashboards we couldn't find the features that wer
 As fleximon is a [dashing](http://dashing.io) dashboard, it is ruby/sinatra with some JavaScript/Coffeescript.  Running bundle install in the root fleximon directory will download and install all required ruby gems.  You will also need to install NodeJS or some other JS interpreter.  Ubuntu is the recommended distribution, although it has been tested on numerous Linux distributions
 
 ## Running Locally
-Vagrant can be used for running an testing locally.  First install vagrant, and virtualbox then install the vagrant-vbguest and vagrant-hostmanager vagrant plugins. 
+Vagrant can be used for running an testing locally.  First install vagrant, and virtualbox then install the vagrant-vbguest plugin if you don't have it already installed.
 
-```vagrant install <plugin>```
+```vagrant plugin install vagrant-vbguest```
 
-Next clone this repository and run vagrant up fleximon in the root of the directory you just cloned.  You will then be able to ssh into the virtualbox guest and see fleximon running with some dummy alerts.
+Next clone this repository and run vagrant up fleximon in the root of the directory you just cloned.  
+
+Then run vagrant up from the fleximon directory.
+You will then be able to ssh into the virtualbox guest and see fleximon running with some dummy alerts.
 
 Sensu is configured in the environment and test alerts are created for different teams and severities.  
-All you need to do is start the fleximon service. 
 
-Run...
-
-```bundle exec thin start -R config.ru -e development -p 8080```
-
-from the /vagrant directory.  You can then access the fleximon UI from both inside and outside the VM by going to http://localhost:8080/sensu
+You can then access the fleximon UI from both inside and outside the VM by going to http://localhost:8080/sensu
 Note: if port 8080 is already in use on your host machine then vagrant will assign the next available port.
 
 ## Running in Production

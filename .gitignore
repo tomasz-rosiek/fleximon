@@ -5,3 +5,4 @@ environments.json
 columns.json
 .vagrant
 *.bak
+fleximon.log
