@@ -1,4 +1,7 @@
-function UpdateQueryString(value, key='team') {
+function UpdateQueryString(value, key) {
+    if(key === undefined) {
+        key = 'team';
+    }
     url = window.location.href;
     var re = new RegExp("([?&])" + key + "=.*?(&|#|$)(.*)", "gi"),
         hash;
