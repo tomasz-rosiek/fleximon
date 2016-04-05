@@ -39,13 +39,8 @@ def get_status(status)
 end
 
 SCHEDULER.every '60s', first_in: 0 do |_job|
-  critical_count = 0
-  warning_count = 0
-  unknown_count = 0
-  client_warning = []
-  client_critical = []
-  table_data = []
-  hrows = [{ cols: [] }]
+  hrows = []
+  col_config = []
 
   # fetch data from sensu API
   def get_data(api, endpoint, user, pass)
@@ -78,9 +73,10 @@ SCHEDULER.every '60s', first_in: 0 do |_job|
   def get_assoc(column_name, entry)
     assoc = {}
     assoc['hostname'] = entry['client']['name']
-    assoc['check'] = entry['check']['name']
+    assoc['name'] = entry['check']['name']
     assoc['output'] = entry['check']['output']
     assoc['team'] = entry['check']['team']
+    assoc['status'] = get_status(entry['check']['status'])
     assoc['category'] = entry['check']['category']
 
     assoc[column_name]
@@ -100,80 +96,42 @@ SCHEDULER.every '60s', first_in: 0 do |_job|
     events.push(*current_env)
   end
 
-  warn = []
-  crit = []
   # status = get_data(SENSU_API_ENDPOINT, '/status',
 
-  columns['config']['default'].each do |column|
-    hrows[0][:cols].insert(-1, value: column)
+  all_columns = ['hostname', 'status', 'name', 'handlers', 'output', 'history', 'team',
+                 'occurances', 'subscribers', 'command']
+
+  all_columns.each do |column|
+    hrows.push(column)
   end
 
   # for each event...
+  all_data = []
   events.each_with_index do |event, _event_index|
     status = event['check']['status']
     status_string = get_status(status)
     event_var = { cols: [] }
 
     # for each column....
-    columns['config']['default'].each_with_index do |column, _column_index|
+    data_list=[]
+    all_columns.each_with_index do |column, _column_index|
       data = get_assoc(column, event)
       data = data.nil? ? '' : data.chomp # remove tailing whitespace
 
       # add column to event var
       column_var = { class: status_string, value: data }
       event_var[:cols].insert(-1, column_var)
-    end
-    # add complete row
-    table_data.insert(-1, event_var)
+      data_list.insert(-1, data)
 
-    # increment alarm count for different status type
-    if status == 1
-      warn.push(event)
-      warning_count += 1
-    elsif status == 2
-      crit.push(event)
-      critical_count += 1
-    elsif status > 2 # status 3 and above == unknown
-      unknown_count += 1
     end
+
+    # add next row to array
+    all_data.insert(-1, data_list)
+
   end
-
-  # update warning count
-  unless warn.empty?
-    warn.each do |entry|
-      client_warning.push(label: entry['client']['name'],
-                          value: entry['check']['name'])
-    end
-  end
-
-  # update critical count
-  unless crit.empty?
-    crit.each.with_index do |entry, _index|
-      client_critical.push(label: entry['client']['name'],
-                           value: entry['check']['name'])
-    end
-  end
-
-  status = if critical_count > 0
-             'red'
-           elsif warning_count > 0
-             'yellow'
-           else
-             'green'
-           end
-
-  # Send all collected data to dashboard
-  send_event('sensu-status',
-             criticals_tmp: critical_count,
-             warnings_tmp: warning_count,
-             unknowns_tmp: unknown_count,
-             status: status)
-
-  send_event('sensu-warn-list', items: client_warning)
-  send_event('sensu-crit-list', items: client_critical)
 
   # dump data into temporary array to be sorted at runtime
   # depending on team query string provided in URL
-  send_event('sensu-table', hrows_tmp: hrows, rows_tmp: table_data)
-
+  send_event('sensu-table', col_config: columns['config'],
+    all_data: all_data, hrows_tmp: hrows)
 end

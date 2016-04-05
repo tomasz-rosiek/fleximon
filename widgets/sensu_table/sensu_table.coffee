@@ -2,32 +2,87 @@ class Dashing.SensuTable extends Dashing.Widget
 
    ready: ->
     # This is fired when the widget is done being rendered
-    console.log('i am at ready')
+     console.log('at ready')
+     if not Dashing.widgets[@id][0]['rows']?
+       console.log('failed to display data')
+     else
+       console.log('no problems here...')
+     return
 
    onData: (data) ->
-     console.log('reading table data')
+
      # Identify team from query string
      # eg. http://dashing.domain.org/sensu?team=devops
      search_query = window.location.search.substring(1)
-     console.log('search query', search_query)
      [key, team] = search_query.split("=")
-     console.log "you are part of " + team
+
+     get_columns = (team_config) ->
+       # identify list of columns to use and their location
+       # in the array of data to be used for filtering
+       hrow_cols = []
+       columns_to_keep = []
+
+       # if there is no config for the chosen team, then use 'default'
+       # but still display only the alarms for that team (not all alarms)
+       if not team_config[root.team()]?
+         col_team = 'default'
+       else
+         col_team=root.team()
+
+       for item in team_config[col_team]
+         hrow_cols.push({'value': item})
+         columns_to_keep.push(data['hrows_tmp'].indexOf(item))
+
+       # return list of column names, and location of the data
+       return [hrow_cols, columns_to_keep]
+
+     get_filtered_column = (columns_to_keep, row) ->
+       # get a list of data based on list of columns that we are displaying
+       cols = []
+       urgency = row[1]
+       for column in columns_to_keep
+         data_hash = {"class": urgency, "value": row[column]}
+         cols.push(data_hash)
+
+       # return columns for fiven row
+       return cols
 
      # store team as a root function so can be accessed globablly
      root = exports ? this
+     if not team
+       team = all
      root.team = -> team
 
      # init vars
      count = {'critical': 0, 'warning': 0, 'unknown': 0}
      filtered_array = []
 
-     if @team() == 'all' or @team() == ''  # all teams
-       # don't do any filtering and just proceed
-       # with all collected values
-       # copy from tmp variables
-       Dashing.widgets[@id][0]['rows'] = data['rows_tmp']
+     # determine which columns to use
+     columns_to_keep = []
+     hrow_cols = []
 
-       # set critical/warning/unknown count vars in DOM
+     [hrow_cols, columns_to_keep] = get_columns(data['col_config'])
+
+     filtered_data = []
+     filtered_hrows = []
+     filtered_hrows.push('cols': hrow_cols)
+
+     # gather data
+     for row in data['all_data']
+       cols=[]
+
+       if @team() in row or @team() == 'all'
+
+         cols = get_filtered_column(columns_to_keep, row)
+         filtered_data.push({'cols': cols})
+
+         if @team() != 'all'
+           urgency = row[1]
+           count[urgency] += 1  # increment count of urgency
+
+     # set final data
+
+     if @team() == 'all'
        Dashing.widgets['sensu-status'][0]['criticals'] =
          Dashing.widgets['sensu-status'][0]['criticals_tmp']
        Dashing.widgets['sensu-status'][0]['warnings'] =
@@ -35,31 +90,21 @@ class Dashing.SensuTable extends Dashing.Widget
        Dashing.widgets['sensu-status'][0]['unknowns'] =
          Dashing.widgets['sensu-status'][0]['unknowns_tmp']
      else
-       # team selected, do filtering
-       for row, index in data['rows_tmp']  # index is row number
-         # get urgency of current row
-         urgency = data['rows_tmp'][index]['cols'][3]['class']
-
-         if data['rows_tmp'][index]['cols'][3]['value'] == @team()
-           console.log('correct team:', @team())
-           count[urgency] += 1  # increment count of urgency
-           filtered_array.push(row)  # push row to filtered array
-
-       # set DOM with all data from filters
-       Dashing.widgets[@id][0]['rows'] = filtered_array
        Dashing.widgets['sensu-status'][0]['criticals'] = count['critical']
        Dashing.widgets['sensu-status'][0]['warnings'] = count['warning']
        Dashing.widgets['sensu-status'][0]['unknowns'] = count['unknown']
 
      # set header row of table
-     Dashing.widgets[@id][0]['hrows'] = data['hrows_tmp']
-     Dashing.widgets[@id].push(@)
+     Dashing.widgets['sensu-table'][0]['hrows'] = filtered_hrows
+     Dashing.widgets['sensu-table'][0]['rows'] = filtered_data
 
      # clean-up old data
      Dashing.widgets['sensu-status'][0]['unknowns_tmp'] =''
      Dashing.widgets['sensu-status'][0]['criticals_tmp'] =''
      Dashing.widgets['sensu-status'][0]['warnings_tmp'] =''
-     Dashing.widgets[@id][0]['rows_tmp'] = ''
+     Dashing.widgets['sensu-table'][0]['hrows_tmp'] = ''
+     Dashing.widgets['sensu-table'][0]['all_data'] = ''
+
      # need the following line  as CS will return last line in a given scope
      # when rendered to JS which may cause a fork bomb and
      # eventually kill the browser (and perhaps the whole machine)
